@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>FinanzApp</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#5D5CDE',
+                        secondary: '#4CAF50',
+                        dark: {
+                            bg: '#181818',
+                            card: '#262626',
+                            text: '#E0E0E0'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        /* Estilos personalizados */
+        .transition-screen {
+            transition: transform 0.3s ease-in-out;
+        }
+        
+        .currency-switch input:checked + .slider {
+            background-color: #5D5CDE;
+        }
+        
+        .currency-switch input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+        
+        /* Animaciones */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        
+        /* Ocultar scrollbar pero mantener funcionalidad */
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="h-full bg-gray-50 dark:bg-dark-bg text-gray-800 dark:text-dark-text">
+    <div id="app" class="h-full flex flex-col max-w-md mx-auto relative overflow-hidden">
+        <!-- Pantalla de login -->
+        <div id="login-screen" class="absolute inset-0 bg-white dark:bg-dark-bg transition-screen z-50 flex flex-col justify-center items-center p-6 fade-in">
+            <div class="w-full max-w-xs">
+                <div class="text-center mb-8">
+                    <i class="bi bi-piggy-bank text-6xl text-primary"></i>
+                    <h1 class="text-3xl font-bold mt-2">FinanzApp</h1>
+                    <p class="text-gray-600 dark:text-gray-400 mt-2">Tu asistente personal de finanzas</p>
+                </div>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-1" for="email">Correo electrónico</label>
+                        <input type="email" id="email" class="w-full p-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-dark-card text-base focus:outline-none focus:ring-2 focus:ring-primary" placeholder="ejemplo@correo.com">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium mb-1" for="password">Contraseña</label>
+                        <input type="password" id="password" class="w-full p-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-dark-card text-base focus:outline-none focus:ring-2 focus:ring-primary" placeholder="••••••••">
+                    </div>
+                    
+                    <button id="login-btn" class="w-full bg-primary hover:bg-opacity-90 text-white py-3 rounded-lg font-medium transition">
+                        Iniciar sesión
+                    </button>
+                    
+                    <div class="text-center">
+                        <button id="register-link" class="text-primary hover:underline text-sm">
+                            ¿No tienes cuenta? Regístrate
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Contenido principal de la app -->
+        <main class="flex-1 overflow-y-auto hide-scrollbar pb-16">
+            <!-- Header -->
+            <header class="sticky top-0 bg-white dark:bg-dark-bg shadow-sm z-10 px-4 py-3 flex justify-between items-center">
+                <div class="flex items-center">
+                    <i class="bi bi-piggy-bank text-2xl text-primary mr-2"></i>
+                    <h1 class="text-xl font-bold">FinanzApp</h1>
+                </div>
+                
+                <div class="flex items-center space-x-3">
+                    <div class="currency-switch relative inline-block w-14 h-7">
+                        <input type="checkbox" id="currency-toggle" class="opacity-0 w-0 h-0">
+                        <span class="slider absolute cursor-pointer inset-0 bg-gray-300 dark:bg-gray-700 rounded-full">
+                            <span class="absolute left-1 top-1.5 text-xs font-medium">$</span>
+                            <span class="absolute right-1.5 top-1.5 text-xs font-medium">€</span>
+                            <span class="absolute w-5 h-5 left-1 top-1 bg-white rounded-full transition-transform"></span>
+                        </span>
+                    </div>
+                    
+                    <button id="profile-btn" class="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center">
+                        <i class="bi bi-person text-lg"></i>
+                    </button>
+                </div>
+            </header>
+            
+            <!-- Saldo y resumen -->
+            <section class="p-4 space-y-4">
+                <div class="bg-primary text-white rounded-xl p-5">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h2 class="text-sm font-medium opacity-90">Saldo actual</h2>
+                            <p class="text-3xl font-bold mt-1">$<span id="current-balance">2,540.75</span></p>
+                        </div>
+                        <div class="currency-indicator text-xs font-medium px-2 py-1 bg-white bg-opacity-20 rounded-full">
+                            USD
+                        </div>
+                    </div>
+                    
+                    <div class="flex mt-5 space-x-4">
+                        <div class="flex-1">
+                            <div class="text-xs font-medium opacity-90">Ingresos mensuales</div>
+                            <p class="text-lg font-semibold">$<span id="monthly-income">3,200.00</span></p>
+                        </div>
+                        <div class="flex-1">
+                            <div class="text-xs font-medium opacity-90">Gastos mensuales</div>
+                            <p class="text-lg font-semibold">$<span id="monthly-expenses">1,840.25</span></p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Acciones rápidas -->
+                <div class="grid grid-cols-2 gap-3">
+                    <button id="add-income-btn" class="bg-white dark:bg-dark-card shadow-sm rounded-xl p-4 flex items-center justify-center space-x-2 hover:shadow transition">
+                        <i class="bi bi-plus-circle text-secondary text-xl"></i>
+                        <span class="font-medium">Ingreso</span>
+                    </button>
+                    
+                    <button id="add-expense-btn" class="bg-white dark:bg-dark-card shadow-sm rounded-xl p-4 flex items-center justify-center space-x-2 hover:shadow transition">
+                        <i class="bi bi-dash-circle text-red-500 text-xl"></i>
+                        <span class="font-medium">Gasto</span>
+                    </button>
+                </div>
+            </section>
+            
+            <!-- Metas de ahorro -->
+            <section class="px-4 pb-4">
+                <div class="flex justify-between items-center mb-3">
+                    <h2 class="text-lg font-semibold">Metas de ahorro</h2>
+                    <button id="add-goal-btn" class="text-primary">
+                        <i class="bi bi-plus-lg"></i>
+                    </button>
+                </div>
+                
+                <div class="space-y-3">
+                    <div class="bg-white dark:bg-dark-card rounded-xl p-4 shadow-sm">
+                        <div class="flex justify-between">
+                            <h3 class="font-medium">Vacaciones</h3>
+                            <span class="text-sm text-gray-600 dark:text-gray-400">$600 / $1,500</span>
+                        </div>
+                        <div class="mt-2 bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
+                            <div class="bg-secondary h-2.5 rounded-full" style="width: 40%"></div>
+                        </div>
+                        <div class="mt-1 text-xs text-gray-500 dark:text-gray-400">40% completado</div>
+                    </div>
+                    
+                    <div class="bg-white dark:bg-dark-card rounded-xl p-4 shadow-sm">
+                        <div class="flex justify-between">
+                            <h3 class="font-medium">Fondo de emergencia</h3>
+                            <span class="text-sm text-gray-600 dark:text-gray-400">$2,500 / $5,000</span>
+                        </div>
+                        <div class="mt-2 bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
+                            <div class="bg-secondary h-2.5 rounded-full" style="width: 50%"></div>
+                        </div>
+                        <div class="mt-1 text-xs text-gray-500 dark:text-gray-400">50% completado</div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Últimas transacciones -->
+            <section class="px-4 pb-4">
+                <h2 class="text-lg font-semibold mb-3">Últimas transacciones</h2>
+                
+                <div class="space-y-3">
+                    <div class="bg-white dark:bg-dark-card rounded-xl p-4 shadow-sm">
+                        <div class="flex justify-between items-center">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
+                                    <i class="bi bi-cart text-blue-600 dark:text-blue-300"></i>
+                                </div>
+                                <div>
+                                    <div class="font-medium">Supermercado</div>
+                                    <div class="text-xs text-gray-500 dark:text-gray-400">Ayer, 18:30</div>
+                                </div>
+                            </div>
+                            <div class="text-red-500 font-medium">-$85.40</div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white dark:bg-dark-card rounded-xl p-4 shadow-sm">
+                        <div class="flex justify-between items-center">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center">
+                                    <i class="bi bi-building text-green-600 dark:text-green-300"></i>
+                                </div>
+                                <div>
+                                    <div class="font-medium">Salario</div>
+                                    <div class="text-xs text-gray-500 dark:text-gray-400">15/05/2023</div>
+                                </div>
+                            </div>
+                            <div class="text-secondary font-medium">+$1,600.00</div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white dark:bg-dark-card rounded-xl p-4 shadow-sm">
+                        <div class="flex justify-between items-center">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 bg-red-100 dark:bg-red-900 rounded-full flex items-center justify-center">
+                                    <i class="bi bi-house text-red-600 dark:text-red-300"></i>
+                                </div>
+                                <div>
+                                    <div class="font-medium">Alquiler</div>
+                                    <div class="text-xs text-gray-500 dark:text-gray-400">12/05/2023</div>
+                                </div>
+                            </div>
+                            <div class="text-red-500 font-medium">-$750.00</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+        
+        <!-- Tab bar de navegación -->
+        <nav class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white dark:bg-dark-card border-t border-gray-200 dark:border-gray-800 flex justify-around px-2 py-3">
+            <button class="flex flex-col items-center text-primary">
+                <i class="bi bi-house-door-fill text-xl"></i>
+                <span class="text-xs mt-1">Inicio</span>
+            </button>
+            
+            <button class="flex flex-col items-center text-gray-500 dark:text-gray-400">
+                <i class="bi bi-bar-chart text-xl"></i>
+                <span class="text-xs mt-1">Estadísticas</span>
+            </button>
+            
+            <button class="flex flex-col items-center text-gray-500 dark:text-gray-400">
+                <i class="bi bi-calendar text-xl"></i>
+                <span class="text-xs mt-1">Planificar</span>
+            </button>
+            
+            <button id="chat-btn" class="flex flex-col items-center text-gray-500 dark:text-gray-400">
+                <i class="bi bi-chat-text text-xl"></i>
+                <span class="text-xs mt-1">Asistente</span>
+            </button>
+        </nav>
+        
+        <!-- Modales -->
+        <!-- Modal de añadir transacción -->
+        <div id="transaction-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-end justify-center hidden">
+            <div class="bg-white dark:bg-dark-bg rounded-t-xl w-full max-w-md p-5 transform transition-transform duration-300 translate-y-full">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold" id="transaction-title">Añadir transacción</h2>
+                    <button class="close-modal">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </div>
+                
+                <form id="transaction-form" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-1" for="transaction-amount">Monto</label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-3 text-gray-500 currency-symbol">$</span>
+                            <input type="number" step="0.01" id="transaction-amount" class="w-full p-3 pl-8 border border-gray-300 dark:border-gray-700 rounded-lg text-base bg-white dark:bg-dark-card focus:outline-none focus:ring-2 focus:ring-primary" placeholder="0.00">
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium mb-1" for="transaction-category">Categoría</label>
+                        <select id="transaction-category" class="w-full p-3 border border-gray-300 dark:border-gray-700 rounded-lg text-base bg-white dark:bg-dark-card focus:outline-none focus:ring-2 focus:ring-primary">
+                            <option value="" disabled selected>Selecciona una categoría</option>
+                            <option value="food">Alimentación</option>
+                            <option value="transport">Transporte</option>
+                            <option value="housing">Vivienda</option>
+                            <option value="entertainment">Entretenimiento</option>
+                            <option value="health">Salud</option>
+                            <option value="education">Educación</option>
+                            <option value="savings">Ahorros</option>
+                            <option value="income">Ingreso</option>
+                            <option value="other">Otro</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium mb-1" for="transaction-description">Descripción</label>
+                        <input type="text" id="transaction-description" class="w-full p-3 border border-gray-300 dark:border-gray-700 rounded-lg text-base bg-white dark:bg-dark-card focus:outline-none focus:ring-2 focus:ring-primary" placeholder="¿En qué gastaste?">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium mb-1" for="transaction-date">Fecha</label>
+                        <input type="date" id="transaction-date" class="w-full p-3 border border-gray-300 dark:border-gray-700 rounded-lg text-base bg-white dark:bg-dark-card focus:outline-none focus:ring-2 focus:ring-primary">
+                    </div>
+                    
+                    <button type="submit" class="w-full bg-primary hover:bg-opacity-90 text-white py-3 rounded-lg font-medium transition">
+                        Guardar
+                    </button>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Modal de añadir meta -->
+        <div id="goal-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-end justify-center hidden">
+            <div class="bg-white dark:bg-dark-bg rounded-t-xl w-full max-w-md p-5 transform transition-transform duration-300 translate-y-full">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold">Nueva meta de ahorro</h2>
+                    <button class="close-modal">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </div>
+                
+                <form id="goal-form" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-1" for="goal-name">Nombre de la meta</label>
+                        <input type="text" id="goal-name" class="w-full p-3 border border-gray-300 dark:border-gray-700 rounded-lg text-base bg-white dark:bg-dark-card focus:outline-none focus:ring-2 focus:ring-primary" placeholder="Ej: Viaje a París">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium mb-1" for="goal-amount">Monto a ahorrar</label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-3 text-gray-500 currency-symbol">$</span>
+                            <input type="number" step="0.01" id="goal-amount" class="w-full p-3 pl-8 border border-gray-300 dark:border-gray-700 rounded-lg text-base bg-white dark:bg-dark-card focus:outline-none focus:ring-2 focus:ring-primary" placeholder="0.00">
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium mb-1" for="goal-date">Fecha objetivo</label>
+                        <input type="date" id="goal-date" class="w-full p-3 border border-gray-300 dark:border-gray-700 rounded-lg text-base bg-white dark:bg-dark-card focus:outline-none focus:ring-2 focus:ring-primary">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium mb-1" for="goal-current">Monto actual (opcional)</label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-3 text-gray-500 currency-symbol">$</span>
+                            <input type="number" step="0.01" id="goal-current" class="w-full p-3 pl-8 border border-gray-300 dark:border-gray-700 rounded-lg text-base bg-white dark:bg-dark-card focus:outline-none focus:ring-2 focus:ring-primary" placeholder="0.00">
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="w-full bg-primary hover:bg-opacity-90 text-white py-3 rounded-lg font-medium transition">
+                        Crear meta
+                    </button>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Chat asistente IA -->
+        <div id="chat-modal" class="fixed inset-0 bg-white dark:bg-dark-bg z-50 flex flex-col hidden">
+            <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-800">
+                <h2 class="text-lg font-bold">Asistente financiero</h2>
+                <button id="close-chat-btn">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+            
+            <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-4 hide-scrollbar">
+                <div class="bg-gray-100 dark:bg-dark-card p-3 rounded-lg rounded-tl-none max-w-[80%] self-start">
+                    <p>¡Hola! Soy tu asistente financiero personal. ¿En qué puedo ayudarte hoy?</p>
+                </div>
+            </div>
+            
+            <div class="p-4 border-t border-gray-200 dark:border-gray-800">
+                <div class="flex space-x-2">
+                    <input type="text" id="chat-input" class="flex-1 p-3 border border-gray-300 dark:border-gray-700 rounded-lg text-base bg-white dark:bg-dark-card focus:outline-none focus:ring-2 focus:ring-primary" placeholder="Pregunta sobre tus finanzas...">
+                    <button id="send-message-btn" class="bg-primary text-white rounded-lg p-3">
+                        <i class="bi bi-send"></i>
+                    </button>
+                </div>
+                
+                <div class="mt-2 text-xs text-gray-500 dark:text-gray-400 text-center">
+                    Puedes preguntar sobre consejos financieros, cómo administrar tu dinero, etc.
+                </div>
+            </div>
+        </div>
+        
+        <div id="loading-indicator" class="fixed inset-0 bg-white dark:bg-dark-bg bg-opacity-80 dark:bg-opacity-80 z-[60] flex items-center justify-center hidden">
+            <div class="text-center">
+                <div class="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
+                <p class="mt-4 text-lg font-medium">Procesando...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Detectar el tema del sistema
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+        }
+        
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            if (event.matches) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        });
+        
+        // Definición de variables del sistema
+        let currentCurrency = 'USD';
+        const exchangeRate = 0.85; // 1 USD = 0.85 EUR aproximadamente
+        
+        // Datos simulados
+        let userData = {
+            balance: 2540.75,
+            monthlyIncome: 3200.00,
+            monthlyExpenses: 1840.25,
+            transactions: [
+                { id: 1, type: 'expense', category: 'food', description: 'Supermercado', amount: 85.40, date: new Date(Date.now() - 86400000) },
+                { id: 2, type: 'income', category: 'income', description: 'Salario', amount: 1600.00, date: new Date('2023-05-15') },
+                { id: 3, type: 'expense', category: 'housing', description: 'Alquiler', amount: 750.00, date: new Date('2023-05-12') }
+            ],
+            savingGoals: [
+                { id: 1, name: 'Vacaciones', targetAmount: 1500, currentAmount: 600, dueDate: new Date('2023-12-31') },
+                { id: 2, name: 'Fondo de emergencia', targetAmount: 5000, currentAmount: 2500, dueDate: new Date('2023-12-31') }
+            ]
+        };
+        
+        // Funciones de utilidad
+        function formatCurrency(amount) {
+            if (currentCurrency === 'EUR') {
+                amount = amount * exchangeRate;
+            }
+            return amount.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+        }
+        
+        function updateCurrencyDisplay() {
+            // Actualizar símbolo de moneda
+            const currencySymbol = currentCurrency === 'USD' ? '$' : '€';
+            document.querySelectorAll('.currency-symbol').forEach(el => {
+                el.textContent = currencySymbol;
+            });
+            
+            // Actualizar indicador de moneda
+            document.querySelector('.currency-indicator').textContent = currentCurrency;
+            
+            // Actualizar valores en la interfaz
+            document.getElementById('current-balance').textContent = formatCurrency(userData.balance);
+            document.getElementById('monthly-income').textContent = formatCurrency(userData.monthlyIncome);
+            document.getElementById('monthly-expenses').textContent = formatCurrency(userData.monthlyExpenses);
+        }
+        
+        function showModal(modalId) {
+            const modal = document.getElementById(modalId);
+            modal.classList.remove('hidden');
+            const modalContent = modal.querySelector('div');
+            setTimeout(() => {
+                modalContent.classList.remove('translate-y-full');
+            }, 10);
+        }
+        
+        function hideModal(modalId) {
+            const modal = document.getElementById(modalId);
+            const modalContent = modal.querySelector('div');
+            modalContent.classList.add('translate-y-full');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
+        
+        function showLoading() {
+            document.getElementById('loading-indicator').classList.remove('hidden');
+        }
+        
+        function hideLoading() {
+            document.getElementById('loading-indicator').classList.add('hidden');
+        }
+        
+        // Registro de eventos
+        document.addEventListener('DOMContentLoaded', () => {
+            // Inicialización
+            updateCurrencyDisplay();
+            
+            // Formulario de login
+            document.getElementById('login-btn').addEventListener('click', () => {
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+                
+                if (!email || !password) {
+                    alert('Por favor, completa todos los campos');
+                    return;
+                }
+                
+                showLoading();
+                
+                // Simulación de login
+                setTimeout(() => {
+                    hideLoading();
+                    document.getElementById('login-screen').style.transform = 'translateY(-100%)';
+                }, 1500);
+            });
+            
+            // Cambio de moneda
+            document.getElementById('currency-toggle').addEventListener('change', (e) => {
+                currentCurrency = e.target.checked ? 'EUR' : 'USD';
+                updateCurrencyDisplay();
+            });
+            
+            // Botones de añadir transacción
+            document.getElementById('add-income-btn').addEventListener('click', () => {
+                document.getElementById('transaction-title').textContent = 'Añadir ingreso';
+                document.getElementById('transaction-category').value = 'income';
+                
+                // Establecer la fecha actual
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('transaction-date').value = today;
+                
+                showModal('transaction-modal');
+            });
+            
+            document.getElementById('add-expense-btn').addEventListener('click', () => {
+                document.getElementById('transaction-title').textContent = 'Añadir gasto';
+                document.getElementById('transaction-category').value = 'food';
+                
+                // Establecer la fecha actual
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('transaction-date').value = today;
+                
+                showModal('transaction-modal');
+            });
+            
+            // Botón de añadir meta
+            document.getElementById('add-goal-btn').addEventListener('click', () => {
+                // Establecer fecha futura por defecto (3 meses)
+                const futureDate = new Date();
+                futureDate.setMonth(futureDate.getMonth() + 3);
+                document.getElementById('goal-date').value = futureDate.toISOString().split('T')[0];
+                
+                showModal('goal-modal');
+            });
+            
+            // Cerrar modales
+            document.querySelectorAll('.close-modal').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const modal = btn.closest('[id$="-modal"]');
+                    hideModal(modal.id);
+                });
+            });
+            
+            // Formulario de transacción
+            document.getElementById('transaction-form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                
+                const amount = parseFloat(document.getElementById('transaction-amount').value);
+                const category = document.getElementById('transaction-category').value;
+                const description = document.getElementById('transaction-description').value;
+                const date = new Date(document.getElementById('transaction-date').value);
+                
+                if (!amount || !category || !description) {
+                    alert('Por favor, completa todos los campos obligatorios');
+                    return;
+                }
+                
+                const transactionType = category === 'income' ? 'income' : 'expense';
+                
+                // Simular añadir transacción a la base de datos
+                const newTransaction = {
+                    id: Date.now(),
+                    type: transactionType,
+                    category,
+                    description,
+                    amount,
+                    date
+                };
+                
+                // Actualizar balance
+                if (transactionType === 'income') {
+                    userData.balance += amount;
+                    userData.monthlyIncome += amount;
+                } else {
+                    userData.balance -= amount;
+                    userData.monthlyExpenses += amount;
+                }
+                
+                // Actualizar UI
+                updateCurrencyDisplay();
+                
+                // Limpiar formulario y cerrar modal
+                document.getElementById('transaction-form').reset();
+                hideModal('transaction-modal');
+            });
+            
+            // Formulario de meta
+            document.getElementById('goal-form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                
+                const name = document.getElementById('goal-name').value;
+                const targetAmount = parseFloat(document.getElementById('goal-amount').value);
+                const dueDate = new Date(document.getElementById('goal-date').value);
+                const currentAmount = parseFloat(document.getElementById('goal-current').value) || 0;
+                
+                if (!name || !targetAmount || !dueDate) {
+                    alert('Por favor, completa todos los campos obligatorios');
+                    return;
+                }
+                
+                // Simular añadir meta a la base de datos
+                const newGoal = {
+                    id: Date.now(),
+                    name,
+                    targetAmount,
+                    currentAmount,
+                    dueDate
+                };
+                
+                // Limpiar formulario y cerrar modal
+                document.getElementById('goal-form').reset();
+                hideModal('goal-modal');
+            });
+            
+            // Chat asistente
+            document.getElementById('chat-btn').addEventListener('click', () => {
+                document.getElementById('chat-modal').classList.remove('hidden');
+            });
+            
+            document.getElementById('close-chat-btn').addEventListener('click', () => {
+                document.getElementById('chat-modal').classList.add('hidden');
+            });
+            
+            // Enviar mensaje al asistente
+            document.getElementById('send-message-btn').addEventListener('click', sendChatMessage);
+            document.getElementById('chat-input').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    sendChatMessage();
+                }
+            });
+            
+            // Inicializar el chat con la fecha actual del sistema
+            const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            const currentDate = new Date().toLocaleDateString('es-ES', dateOptions);
+            
+            setTimeout(() => {
+                addBotMessage(`Hoy es ${currentDate}. Tu saldo actual es $${formatCurrency(userData.balance)}. ¿Necesitas algún consejo financiero hoy?`);
+            }, 1000);
+        });
+        
+        // Gestión del chat con IA
+        async function sendChatMessage() {
+            const inputElement = document.getElementById('chat-input');
+            const userMessage = inputElement.value.trim();
+            
+            if (!userMessage) return;
+            
+            // Añadir mensaje del usuario al chat
+            const chatMessages = document.getElementById('chat-messages');
+            const userMessageElement = document.createElement('div');
+            userMessageElement.className = 'bg-primary bg-opacity-10 p-3 rounded-lg rounded-tr-none max-w-[80%] ml-auto';
+            userMessageElement.innerHTML = `<p>${userMessage}</p>`;
+            chatMessages.appendChild(userMessageElement);
+            
+            // Limpiar input
+            inputElement.value = '';
+            
+            // Scroll al fondo
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            
+            // Mostrar indicador de escritura
+            const typingIndicator = document.createElement('div');
+            typingIndicator.className = 'bg-gray-100 dark:bg-dark-card p-3 rounded-lg rounded-tl-none max-w-[80%] self-start typing-indicator';
+            typingIndicator.innerHTML = '<p>Escribiendo<span class="dot-1">.</span><span class="dot-2">.</span><span class="dot-3">.</span></p>';
+            chatMessages.appendChild(typingIndicator);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            
+            try {
+                // Registrar manejador para las respuestas
+                window.Poe.registerHandler("finance-assistant", (result) => {
+                    const msg = result.responses[0];
+                    
+                    // Remover indicador de escritura
+                    document.querySelector('.typing-indicator')?.remove();
+                    
+                    if (msg.status === "error") {
+                        addBotMessage("Lo siento, ha ocurrido un error. Por favor, intenta de nuevo.");
+                    } else if (msg.status === "complete") {
+                        addBotMessage(msg.content);
+                    }
+                });
+                
+                // Enviar mensaje al bot
+                await window.Poe.sendUserMessage(`@Claude-3.7-Sonnet Eres un experto financiero y estás ayudando a un usuario con sus finanzas personales. Responde de manera breve y clara. El usuario pregunta: ${userMessage}`, {
+                    handler: "finance-assistant",
+                    stream: false,
+                    openChat: false
+                });
+                
+            } catch (error) {
+                // Si ocurre un error (posiblemente porque Poe API no está disponible en el entorno del usuario)
+                document.querySelector('.typing-indicator')?.remove();
+                
+                // Respuesta simulada después de un breve retraso
+                setTimeout(() => {
+                    // Generar una respuesta simulada basada en la pregunta del usuario
+                    let botResponse = "Lo siento, no puedo procesar tu pregunta en este momento.";
+                    
+                    if (userMessage.toLowerCase().includes("ahorro") || userMessage.toLowerCase().includes("ahorrar")) {
+                        botResponse = "Una buena estrategia de ahorro es la regla 50/30/20: destina 50% a necesidades, 30% a deseos y 20% a ahorro e inversión. Intenta automatizar tus ahorros para que sean consistentes.";
+                    } else if (userMessage.toLowerCase().includes("inversión") || userMessage.toLowerCase().includes("invertir")) {
+                        botResponse = "Para inversiones, considera diversificar tu cartera. Comienza con fondos indexados si eres principiante. Recuerda que toda inversión conlleva riesgos, así que investiga bien antes de invertir.";
+                    } else if (userMessage.toLowerCase().includes("deuda") || userMessage.toLowerCase().includes("crédito")) {
+                        botResponse = "Para manejar deudas, prioriza pagar las de mayor interés. Considera el método de avalancha (mayor interés primero) o el método de bola de nieve (menor saldo primero) según tu situación.";
+                    } else if (userMessage.toLowerCase().includes("presupuesto") || userMessage.toLowerCase().includes("gastos")) {
+                        botResponse = "Un buen presupuesto comienza por identificar todos tus ingresos y gastos. Revisa tus extractos bancarios de los últimos 3 meses para identificar patrones de gasto y áreas donde puedes recortar.";
+                    } else {
+                        botResponse = "Gracias por tu pregunta sobre finanzas personales. Recuerda que un buen plan financiero incluye: presupuesto mensual, fondo de emergencia (3-6 meses de gastos), gestión adecuada de deudas, y objetivos de ahorro claros.";
+                    }
+                    
+                    addBotMessage(botResponse);
+                }, 1500);
+            }
+        }
+        
+        function addBotMessage(text) {
+            const chatMessages = document.getElementById('chat-messages');
+            const botMessageElement = document.createElement('div');
+            botMessageElement.className = 'bg-gray-100 dark:bg-dark-card p-3 rounded-lg rounded-tl-none max-w-[80%] self-start';
+            botMessageElement.innerHTML = `<p>${text}</p>`;
+            chatMessages.appendChild(botMessageElement);
+            
+            // Scroll al fondo
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+    </script>
+</body>
+</html>
